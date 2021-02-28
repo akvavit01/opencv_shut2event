@@ -9,11 +9,12 @@ int main(int argc, char *argv[])
     };
 
     // CLI argument parser keys
-    const std::string keys{ "{h help usage ?        |                   | show help message             }"
-                            "{vid-name              | /dev/video0       | link of video stream          }"
-                            "{show-raw-frame        |                   | show conventional frame       }"
-                            "{show-event-frame      |                   | show event frame              }"
-                            "{write-fps             |                   | show fps count on raw frame   }" };
+    const std::string keys{ "{h help usage ?        |                   | show help message                 }"
+                            "{vid-name              | /dev/video0       | link of video stream              }"
+                            "{show-raw-frame        |                   | show conventional frame           }"
+                            "{show-event-frame      |                   | show event frame                  }"
+                            "{write-fps             |                   | show fps count on raw frame       }"
+                            "{write-fps-freq        | 1000              | how fast to print fps count in ms }" };
 
     cv::CommandLineParser args(argc, argv, keys);
 
@@ -63,7 +64,16 @@ int main(int argc, char *argv[])
                     args.get<std::string>("help")  == "write-fps"   ||
                     args.get<std::string>("usage") == "write-fps"   )
         {
-            std::cout << "Toggle to show event fFPS count.\n";
+            std::cout << "Toggle to show event FPS count.\n";
+        }
+
+        // Details for flag on showing fps count frequency
+        else if (   args.get<std::string>("h")     == "write-fps-freq"  ||
+                    args.get<std::string>("?")     == "write-fps-freq"  ||
+                    args.get<std::string>("help")  == "write-fps-freq"  ||
+                    args.get<std::string>("usage") == "write-fps-freq"  )
+        {
+            std::cout << "To set FPS count frequency in ms.\n";
         }
 
         // Showing general usage instructions
@@ -73,18 +83,11 @@ int main(int argc, char *argv[])
     }
 
     // Capturing CLI arguments value
-    const std::string vidName   { args.get<std::string>("vid-name") }; // video stream link
-    const bool showRawFrame     { args.has("show-raw-frame") }; // show conv frame or not
-    const bool showEventFrame   { args.has("show-event-frame") }; // show event frame or not
-    const bool showFPSCount     { args.has("write-fps") }; // show fps count
-
-    // Checking raw stream
-    cv::VideoCapture rawStream(vidName);
-    if (!rawStream.isOpened())
-    {
-        std::cerr << "Video stream unreadable\n";
-        return UNREADABLE_VIDEO;
-    }
+    const std::string vidName       { args.get<std::string>("vid-name") }; // video stream link
+    const bool showRawFrame         { args.has("show-raw-frame") }; // show conv frame or not
+    const bool showEventFrame       { args.has("show-event-frame") }; // show event frame or not
+    const bool showFPSCount         { args.has("write-fps") }; // show fps count
+    const size_t showFPSCountFreq   { args.get<size_t>("write-fps-freq") }; // show fps count frequency
 
     // Windows
     const std::string rawStreamWinName      {"Raw Stream"};
@@ -98,6 +101,14 @@ int main(int argc, char *argv[])
         cv::namedWindow(eventStreamWinName, cv::WINDOW_OPENGL);
     }
 
+    // Checking raw stream
+    cv::VideoCapture rawStream(vidName);
+    if (!rawStream.isOpened())
+    {
+        std::cerr << "Video stream unreadable\n";
+        return UNREADABLE_VIDEO;
+    }
+
     // For storing frames
     cv::UMat prevRawFrame;
     cv::UMat currRawFrame;
@@ -106,11 +117,26 @@ int main(int argc, char *argv[])
     // Initialize raw frame
     rawStream >> prevRawFrame;
 
+    // Initialize fps counter time
+    cv::TickMeter FPSTickMeter;
+    FPSTickMeter.start();
+
     // Show streams on windows
-    for (   char keyPressed{ static_cast<char>( cv::waitKey(1) ) }; 
-            keyPressed != 27; 
-            keyPressed = static_cast<char>( cv::waitKey(1) ) )
+    while (true)
     {
+        // Checking if stream is still opened
+        if ( !rawStream.isOpened() )
+        {
+            std::cerr << "Video stream unreadable\n";
+            return UNREADABLE_VIDEO;
+        }
+
+        // Checking if streaming has ended
+        if ( static_cast<char>( cv::waitKey(1) ) == 27 )
+        {
+            break;
+        }
+
         // Update raw frames
         rawStream >> currRawFrame;
 
@@ -121,20 +147,30 @@ int main(int argc, char *argv[])
             return UNREADABLE_VIDEO;
         }
 
-        // Displaying
+        // Show FPS count
+        if (showFPSCount)
+        {
+            /*cv::putText(currRawFrame,
+                        std::to_string(rawStream.get(cv::CAP_PROP_FPS)) + " fps",
+                        cv::Point(50, 50),
+                        cv::FONT_HERSHEY_COMPLEX, 1,
+                        (0, 0, 0),
+                        2,
+                        cv::LINE_4);*/ // write fps count on terminal instead
+            
+            FPSTickMeter.stop();
+            //std::cout << FPSTickMeter.getTimeMilli() << '\n'; // for debugging purpose
+            if ( FPSTickMeter.getTimeMilli() >= showFPSCountFreq )
+            {
+                std::cout << "FPS Count: " << std::to_string(rawStream.get(cv::CAP_PROP_FPS)) << " fps\n";
+                FPSTickMeter.reset();
+            }
+            FPSTickMeter.start();
+        }
+
+        // Displaying frames
         if (showRawFrame)
         {
-            if (showFPSCount)
-            {
-                cv::putText(currRawFrame,
-                            std::to_string(rawStream.get(cv::CAP_PROP_FPS)) + " fps",
-                            cv::Point(50, 50),
-                            cv::FONT_HERSHEY_COMPLEX, 1,
-                            (0, 0, 0),
-                            2,
-                            cv::LINE_4);
-            }
-            
             cv::imshow(rawStreamWinName, currRawFrame);
         }
         if (showEventFrame)
