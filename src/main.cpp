@@ -2,6 +2,9 @@
 
 int main(int argc, char *argv[])
 {
+    // Showing OpenCV version
+    std::cout << "OpenCV Version: " << cv::getVersionString() << '\n';
+
     enum Errors
     {
         NO_ERROR,
@@ -16,7 +19,8 @@ int main(int argc, char *argv[])
                             "{write-fps             |                   | show fps count on raw frame       }"
                             "{write-fps-freq        | 1000              | how fast to print fps count in ms }"
                             "{max-ram               | 2.0               | max RAM used in GB                }"
-                            "{ef-conv-meth          | absdiff           | conversion method   }" };
+                            "{ef-conv-meth          | absdiff           | conversion method                 }" 
+                            "{frame-mode            | rgb               | image channels                    }"};
 
     cv::CommandLineParser args(argc, argv, keys);
 
@@ -39,7 +43,7 @@ int main(int argc, char *argv[])
             args.get<std::string>("help")  == "vid-name"    ||
             args.get<std::string>("usage") == "vid-name"    )
         {
-            std::cout << "Link or path to video stream. Can be live stream or video recording.\n";
+            std::cout << "Link or path to video stream. Can be live stream or video recording.\n\n";
         }
 
         // Details for flag on showing conventional frames
@@ -48,7 +52,7 @@ int main(int argc, char *argv[])
                     args.get<std::string>("help")  == "show-event-frame"    ||
                     args.get<std::string>("usage") == "show-event-frame"    )
         {
-            std::cout << "Toggle to show conventional frame streams.\n";
+            std::cout << "Toggle to show conventional frame streams.\n\n";
         }
 
         // Details for flag on showing conventional frames
@@ -57,7 +61,7 @@ int main(int argc, char *argv[])
                     args.get<std::string>("help")  == "show-raw-frame"      ||
                     args.get<std::string>("usage") == "show-raw-frame"      )
         {
-            std::cout << "Toggle to show event frame streams.\n";
+            std::cout << "Toggle to show event frame streams.\n\n";
         }
 
         // Details for flag on showing fps count
@@ -66,7 +70,7 @@ int main(int argc, char *argv[])
                     args.get<std::string>("help")  == "write-fps"   ||
                     args.get<std::string>("usage") == "write-fps"   )
         {
-            std::cout << "Toggle to show event FPS count.\n";
+            std::cout << "Toggle to show event FPS count.\n\n";
         }
 
         // Details for flag on showing fps count frequency
@@ -75,7 +79,7 @@ int main(int argc, char *argv[])
                     args.get<std::string>("help")  == "write-fps-freq"  ||
                     args.get<std::string>("usage") == "write-fps-freq"  )
         {
-            std::cout << "To set max RAM to be used.\n";
+            std::cout << "To set max RAM to be used.\n\n";
         }
 
         // Details for max RAM usage
@@ -84,7 +88,7 @@ int main(int argc, char *argv[])
                     args.get<std::string>("help")  == "max-ram" ||
                     args.get<std::string>("usage") == "max-ram" )
         {
-            std::cout << "To set FPS count frequency in ms.\n";
+            std::cout << "To set FPS count frequency in ms.\n\n";
         }
 
         // Details on setting color change direction
@@ -95,7 +99,18 @@ int main(int argc, char *argv[])
         {
             std::cout   << "Conversion method for producing event frame.\n"
                         << "Option: - absdiff: using absolute difference\n"
-                        << "        - substract: using substract, negative pixel will be zero\n";
+                        << "        - substract: using substract, negative pixel will be zero\n\n";
+        }
+
+        // Details on setting image color channel
+        else if (   args.get<std::string>("h")      == "frame-mode" ||
+                    args.get<std::string>("?")      == "frame-mode" ||
+                    args.get<std::string>("help")   == "frame-mode" ||
+                    args.get<std::string>("usage")  == "frame-mode" )
+        {
+            std::cout   << "Conversion method for producing event frame.\n"
+                        << "Option: - rgb: using BGR color scheme\n"
+                        << "        - grayscale: using grayscale color scheme\n\n";
         }
 
         // Showing general usage instructions
@@ -119,6 +134,15 @@ int main(int argc, char *argv[])
     else if ( args.get<std::string>("ef-conv-meth") == "substract" )
     {
         convMeth = 1;
+    }
+    short int frameMode; // which color scheme for processed frames
+    if ( args.get<std::string>("frame-mode") == "rgb" )
+    {
+        frameMode = 0;
+    }
+    else if ( args.get<std::string>("frame-mode") == "grasyscale" )
+    {
+        frameMode = 1;
     }
 
     // Windows
@@ -155,10 +179,17 @@ int main(int argc, char *argv[])
 
     // Initialize raw frame
     rawStream >> prevRawFrame;
+    if (frameMode) // grayscale mode
+    {
+        cv::cvtColor(prevRawFrame, prevRawFrame, cv::COLOR_BGR2GRAY);
+    }
 
     // Initialize fps counter time
     cv::TickMeter FPSTickMeter;
-    FPSTickMeter.start();
+    if (showFPSCount)
+    {
+        FPSTickMeter.start();
+    }
 
     // Show streams on windows
     while (true)
@@ -173,11 +204,17 @@ int main(int argc, char *argv[])
         // Checking if streaming has ended
         if ( static_cast<char>( cv::waitKey(1) ) == 27 )
         {
+            std::cout   << "ESC Pressed\n"
+                        << "Stream ending...\n";
             break;
         }
 
         // Update raw frames
         rawStream >> currRawFrame;
+        if (frameMode) // grayscale mode
+        {
+            cv::cvtColor(currRawFrame, currRawFrame, cv::COLOR_BGR2GRAY);
+        }
 
         // Checking if video stream is still open
         if ( currRawFrame.empty() || prevRawFrame.empty() )
@@ -214,12 +251,12 @@ int main(int argc, char *argv[])
         }
         if (showEventFrame)
         {
-            if (convMeth == 0) // absdiff
+            if (!convMeth) // absdiff
             {
                 cv::absdiff(currRawFrame, prevRawFrame, eventFrame);
                 cv::imshow(eventStreamWinName, eventFrame);
             }
-            else if (convMeth == 1)
+            else if (convMeth == 1) // substract
             {
                 cv::subtract(currRawFrame, prevRawFrame, eventFrame);
                 cv::imshow(eventStreamWinName, eventFrame);
