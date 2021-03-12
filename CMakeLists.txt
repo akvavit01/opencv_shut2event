@@ -32,10 +32,14 @@ find_package(VTK)
 # Find gflags
 find_package(gflags)
 
+# Find Intel TBB
+find_package(TBB REQUIRED)
+
 # Include headers
 include_directories(
     include
     ${OpenCV_INCLUDE_DIRS}
+    ${TBB_INCLUDE_DIR}
 )
 
 # Create main object
@@ -44,6 +48,7 @@ add_executable(main src/main.cpp)
 # Include main libraries
 target_link_libraries(main PUBLIC
     ${OpenCV_LIBS}
+    ${TBB_LIBRARY}
 )
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

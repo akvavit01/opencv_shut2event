@@ -14,7 +14,9 @@ int main(int argc, char *argv[])
                             "{show-raw-frame        |                   | show conventional frame           }"
                             "{show-event-frame      |                   | show event frame                  }"
                             "{write-fps             |                   | show fps count on raw frame       }"
-                            "{write-fps-freq        | 1000              | how fast to print fps count in ms }" };
+                            "{write-fps-freq        | 1000              | how fast to print fps count in ms }"
+                            "{max-ram               | 2.0               | max RAM used in GB                }"
+                            "{ef-conv-meth          | absdiff           | conversion method   }" };
 
     cv::CommandLineParser args(argc, argv, keys);
 
@@ -73,7 +75,27 @@ int main(int argc, char *argv[])
                     args.get<std::string>("help")  == "write-fps-freq"  ||
                     args.get<std::string>("usage") == "write-fps-freq"  )
         {
+            std::cout << "To set max RAM to be used.\n";
+        }
+
+        // Details for max RAM usage
+        else if (   args.get<std::string>("h")     == "max-ram" ||
+                    args.get<std::string>("?")     == "max-ram" ||
+                    args.get<std::string>("help")  == "max-ram" ||
+                    args.get<std::string>("usage") == "max-ram" )
+        {
             std::cout << "To set FPS count frequency in ms.\n";
+        }
+
+        // Details on setting color change direction
+        else if (   args.get<std::string>("h")      == "ef-conv-meth"   ||
+                    args.get<std::string>("?")      == "ef-conv-meth"   ||
+                    args.get<std::string>("help")   == "ef-conv-meth"   ||
+                    args.get<std::string>("usage")  == "ef-conv-meth"   )
+        {
+            std::cout   << "Conversion method for producing event frame.\n"
+                        << "Option: - absdiff: using absolute difference\n"
+                        << "        - substract: using substract, negative pixel will be zero\n";
         }
 
         // Showing general usage instructions
@@ -87,7 +109,17 @@ int main(int argc, char *argv[])
     const bool showRawFrame         { args.has("show-raw-frame") }; // show conv frame or not
     const bool showEventFrame       { args.has("show-event-frame") }; // show event frame or not
     const bool showFPSCount         { args.has("write-fps") }; // show fps count
-    const size_t showFPSCountFreq   { args.get<size_t>("write-fps-freq") }; // show fps count frequency
+    const size_t showFPSCountPeriod { args.get<size_t>("write-fps-freq") }; // show fps count frequency
+    const float maxRAM              { args.get<float>("max-ram") }; // max RAM to be used
+    short int convMeth; // which method for producing event frame
+    if ( args.get<std::string>("ef-conv-meth") == "absdiff" )
+    {
+        convMeth = 0;
+    }
+    else if ( args.get<std::string>("ef-conv-meth") == "substract" )
+    {
+        convMeth = 1;
+    }
 
     // Windows
     const std::string rawStreamWinName      {"Raw Stream"};
@@ -99,6 +131,7 @@ int main(int argc, char *argv[])
     if (showEventFrame)
     {
         cv::namedWindow(eventStreamWinName, cv::WINDOW_OPENGL);
+        //cv::namedWindow(eventStreamWinName + " Diff", cv::WINDOW_OPENGL);
     }
 
     // Checking raw stream
@@ -108,6 +141,12 @@ int main(int argc, char *argv[])
         std::cerr << "Video stream unreadable\n";
         return UNREADABLE_VIDEO;
     }
+    std::cout << "Stream is starting...\n";
+
+    // Initialize parallel processing pipeline // TO DO
+    //tbb::concurrent_bounded_queue<ProcessingChainData*> frameQueue;
+    //frameQueue.set_capacity(maxRAM);
+    //auto pipelineRunner{ std::thread() };
 
     // For storing frames
     cv::UMat prevRawFrame;
@@ -160,7 +199,7 @@ int main(int argc, char *argv[])
             
             FPSTickMeter.stop();
             //std::cout << FPSTickMeter.getTimeMilli() << '\n'; // for debugging purpose
-            if ( FPSTickMeter.getTimeMilli() >= showFPSCountFreq )
+            if ( FPSTickMeter.getTimeMilli() >= showFPSCountPeriod )
             {
                 std::cout << "FPS Count: " << std::to_string(rawStream.get(cv::CAP_PROP_FPS)) << " fps\n";
                 FPSTickMeter.reset();
@@ -175,9 +214,16 @@ int main(int argc, char *argv[])
         }
         if (showEventFrame)
         {
-            //cv::subtract(currRawFrame, prevRawFrame, eventFrame); // use absdiff instead, as all negative pixel values will be converted into zero
-            cv::absdiff(currRawFrame, prevRawFrame, eventFrame);
-            cv::imshow(eventStreamWinName, eventFrame);
+            if (convMeth == 0) // absdiff
+            {
+                cv::absdiff(currRawFrame, prevRawFrame, eventFrame);
+                cv::imshow(eventStreamWinName, eventFrame);
+            }
+            else if (convMeth == 1)
+            {
+                cv::subtract(currRawFrame, prevRawFrame, eventFrame);
+                cv::imshow(eventStreamWinName, eventFrame);
+            }
 
             currRawFrame.copyTo(prevRawFrame);
         }
