@@ -1,9 +1,56 @@
-#include "main.hpp"
+// STL
+#include <iostream> // for I/O stream
+
+// OpenCV
+#include <opencv2/core.hpp> // core library
+#include <opencv2/videoio.hpp> // for video I/O
+#include <opencv2/highgui.hpp> // window I/O
+#include <opencv2/core/utility.hpp> // for time utilities
+#include <opencv2/imgproc.hpp> // for writing
+
+// pyDVS
+#include "dvs_emu.hpp"
+
+void diffToBGR(cv::Mat& bgr, const cv::Mat& gray, const cv::Mat& diff, const float thr)
+{
+    constexpr int B{0};
+    constexpr int G{1};
+    constexpr int R{2};
+
+    for(size_t row{0}; row < gray.rows; ++row)
+    {
+        for(size_t col{0}; col < gray.cols; ++col)
+        {
+            cv::Vec3f color(0.0f, 0.0f, 0.0f);
+            float val {diff.at<float>(row, col)};
+            if(val > thr)
+            {
+                color[G] = 1.0;
+            } 
+            else if(val < -thr)
+            {
+                color[R] = 1.0;
+            } 
+            else 
+            {
+                val = gray.at<float>(row, col)/255.0f;
+                color[R] = val;
+                color[G] = val;
+                color[B] = val;
+            }
+            bgr.at<cv::Vec3f>(row, col) = color;
+        }
+    }
+
+}
 
 int main(int argc, char *argv[])
 {
     // Showing OpenCV version
-    std::cout << "OpenCV Version: " << cv::getVersionString() << '\n';
+    std::cout   << "OpenCV version : " << CV_VERSION << '\n'
+                << "Major version : " << CV_MAJOR_VERSION << '\n'
+                << "Minor version : " << CV_MINOR_VERSION << '\n'
+                << "Subminor version : " << CV_SUBMINOR_VERSION << '\n';
 
     enum Errors
     {
@@ -14,13 +61,16 @@ int main(int argc, char *argv[])
     // CLI argument parser keys
     const std::string keys{ "{h help usage ?        |                   | show help message                 }"
                             "{vid-name              | /dev/video0       | link of video stream              }"
-                            "{show-raw-frame        |                   | show conventional frame           }"
+                            "{show-raw-frame        |                   | show raw frame                    }"
+                            "{show-gray-frame       |                   | show grayscale frame              }"
                             "{show-event-frame      |                   | show event frame                  }"
+                            "{show-diff-frame       |                   | show difference frame             }"
                             "{write-fps             |                   | show fps count on raw frame       }"
                             "{write-fps-freq        | 1000              | how fast to print fps count in ms }"
-                            "{max-ram               | 2.0               | max RAM used in GB                }"
-                            "{ef-conv-meth          | absdiff           | conversion method                 }" 
-                            "{frame-mode            | rgb               | image channels                    }"};
+                            "{thr                   | 10.0              | pyDVS emulator threshold          }"
+                            "{rel-rate              | 0.999             | pyDVS emulator relax rate         }"
+                            "{adapt-up              | 1.5               | pyDVS emulator adapt up           }"
+                            "{adapt-down            | 0.99              | pyDVS emulator adapt down         }" };
 
     cv::CommandLineParser args(argc, argv, keys);
 
@@ -79,38 +129,43 @@ int main(int argc, char *argv[])
                     args.get<std::string>("help")  == "write-fps-freq"  ||
                     args.get<std::string>("usage") == "write-fps-freq"  )
         {
-            std::cout << "To set max RAM to be used.\n\n";
+            std::cout << "To show how fast FPS count will be shown.\n\n";
         }
 
-        // Details for max RAM usage
-        else if (   args.get<std::string>("h")     == "max-ram" ||
-                    args.get<std::string>("?")     == "max-ram" ||
-                    args.get<std::string>("help")  == "max-ram" ||
-                    args.get<std::string>("usage") == "max-ram" )
+        // Details for flag on setting pyDVS threshold value
+        else if (   args.get<std::string>("h")     == "thr" ||
+                    args.get<std::string>("?")     == "thr" ||
+                    args.get<std::string>("help")  == "thr" ||
+                    args.get<std::string>("usage") == "thr" )
         {
-            std::cout << "To set FPS count frequency in ms.\n\n";
+            std::cout << "To set threshold value for pyDVS processing.\n\n";
         }
 
-        // Details on setting color change direction
-        else if (   args.get<std::string>("h")      == "ef-conv-meth"   ||
-                    args.get<std::string>("?")      == "ef-conv-meth"   ||
-                    args.get<std::string>("help")   == "ef-conv-meth"   ||
-                    args.get<std::string>("usage")  == "ef-conv-meth"   )
+        // Details for flag on setting pyDVS relax rate
+        else if (   args.get<std::string>("h")     == "rel-rate"    ||
+                    args.get<std::string>("?")     == "rel-rate"    ||
+                    args.get<std::string>("help")  == "rel-rate"    ||
+                    args.get<std::string>("usage") == "rel-rate"    )
         {
-            std::cout   << "Conversion method for producing event frame.\n"
-                        << "Option: - absdiff: using absolute difference\n"
-                        << "        - substract: using substract, negative pixel will be zero\n\n";
+            std::cout << "To set relax rate value for pyDVS processing.\n\n";
         }
 
-        // Details on setting image color channel
-        else if (   args.get<std::string>("h")      == "frame-mode" ||
-                    args.get<std::string>("?")      == "frame-mode" ||
-                    args.get<std::string>("help")   == "frame-mode" ||
-                    args.get<std::string>("usage")  == "frame-mode" )
+        // Details for flag on setting pyDVS adapt up
+        else if (   args.get<std::string>("h")     == "adapt-up"    ||
+                    args.get<std::string>("?")     == "adapt-up"    ||
+                    args.get<std::string>("help")  == "adapt-up"    ||
+                    args.get<std::string>("usage") == "adapt-up"    )
         {
-            std::cout   << "Conversion method for producing event frame.\n"
-                        << "Option: - rgb: using BGR color scheme\n"
-                        << "        - grayscale: using grayscale color scheme\n\n";
+            std::cout << "To set adapt up value for pyDVS processing.\n\n";
+        }
+
+        // Details for flag on setting pyDVS adapt up
+        else if (   args.get<std::string>("h")     == "adapt-down"  ||
+                    args.get<std::string>("?")     == "adapt-down"  ||
+                    args.get<std::string>("help")  == "adapt-down"  ||
+                    args.get<std::string>("usage") == "adapt-down"  )
+        {
+            std::cout << "To set adapt down value for pyDVS processing.\n\n";
         }
 
         // Showing general usage instructions
@@ -121,68 +176,50 @@ int main(int argc, char *argv[])
 
     // Capturing CLI arguments value
     const std::string vidName       { args.get<std::string>("vid-name") }; // video stream link
-    const bool showRawFrame         { args.has("show-raw-frame") }; // show conv frame or not
-    const bool showEventFrame       { args.has("show-event-frame") }; // show event frame or not
+    /*const bool showRawFrame         { args.has("show-raw-frame") }; // show raw frame or not
+    const bool showGrayFrame        { args.has("show-gray-frame") }; // show grayscale frame or not
+    const bool showDiffFrame        { args.has("show-diff-frame") }; // show difference frame or not
+    const bool showEventFrame       { args.has("show-event-frame") };*/ // show event frame or not
     const bool showFPSCount         { args.has("write-fps") }; // show fps count
     const size_t showFPSCountPeriod { args.get<size_t>("write-fps-freq") }; // show fps count frequency
-    const float maxRAM              { args.get<float>("max-ram") }; // max RAM to be used
-    short int convMeth; // which method for producing event frame
-    if ( args.get<std::string>("ef-conv-meth") == "absdiff" )
+    const float thr                 { args.get<float>("thr") }; // threshold value for pyDVS processing
+    const float relRate             { args.get<float>("rel-rate") }; // relax rate value for pyDVS processing
+    const float adaptUp             { args.get<float>("adapt-up") }; // adapt up value for pyDVS processing
+    const float adaptDown           { args.get<float>("adapt-down") }; // adapt down value for pyDVS processing
+
+    // PyDVS object
+    PyDVS DVS;
+
+    // Check video stream
+    bool ok { DVS.init(vidName, thr, relRate, adaptUp, adaptDown) };
+    if(!ok)
     {
-        convMeth = 0;
+        std::cerr << "Unable to open video source.\n";
+        return UNREADABLE_VIDEO;
     }
-    else if ( args.get<std::string>("ef-conv-meth") == "substract" )
-    {
-        convMeth = 1;
-    }
-    short int frameMode; // which color scheme for processed frames
-    if ( args.get<std::string>("frame-mode") == "rgb" )
-    {
-        frameMode = 0;
-    }
-    else if ( args.get<std::string>("frame-mode") == "grasyscale" )
-    {
-        frameMode = 1;
-    }
+    std::cout << "Stream is starting...\n";
 
     // Windows
-    const std::string rawStreamWinName      {"Raw Stream"};
+    /*const std::string rawStreamWinName      {"Raw Stream"};
+    const std::string grayStreamWinName     {"Grayscale Stream"};
+    const std::string diffStreamWinName     {"Difference Stream"};
     const std::string eventStreamWinName    {"Event Frames Stream"};
     if (showRawFrame)
     {
         cv::namedWindow(rawStreamWinName, cv::WINDOW_OPENGL);
     }
+    if (showGrayFrame)
+    {
+        cv::namedWindow(grayStreamWinName, cv::WINDOW_OPENGL);
+    }
+    if (showDiffFrame)
+    {
+        cv::namedWindow(diffStreamWinName, cv::WINDOW_OPENGL);
+    }
     if (showEventFrame)
     {
         cv::namedWindow(eventStreamWinName, cv::WINDOW_OPENGL);
-        //cv::namedWindow(eventStreamWinName + " Diff", cv::WINDOW_OPENGL);
-    }
-
-    // Checking raw stream
-    cv::VideoCapture rawStream(vidName);
-    if (!rawStream.isOpened())
-    {
-        std::cerr << "Video stream unreadable\n";
-        return UNREADABLE_VIDEO;
-    }
-    std::cout << "Stream is starting...\n";
-
-    // Initialize parallel processing pipeline // TO DO
-    //tbb::concurrent_bounded_queue<ProcessingChainData*> frameQueue;
-    //frameQueue.set_capacity(maxRAM);
-    //auto pipelineRunner{ std::thread() };
-
-    // For storing frames
-    cv::UMat prevRawFrame;
-    cv::UMat currRawFrame;
-    cv::UMat eventFrame;
-
-    // Initialize raw frame
-    rawStream >> prevRawFrame;
-    if (frameMode) // grayscale mode
-    {
-        cv::cvtColor(prevRawFrame, prevRawFrame, cv::COLOR_BGR2GRAY);
-    }
+    }*/
 
     // Initialize fps counter time
     cv::TickMeter FPSTickMeter;
@@ -191,78 +228,84 @@ int main(int argc, char *argv[])
         FPSTickMeter.start();
     }
 
-    // Show streams on windows
-    while (true)
+    // Set DVS parameters
+    DVS.setAdapt(relRate, adaptUp, adaptDown, thr);
+    std::cout   << "Relax rate = " << DVS.getRelaxRate() << '\n'
+                << "Adapt up = " << DVS.getAdaptUp() << '\n'
+                << "Adapt down = " << DVS.getAdaptDown() << '\n';
+
+    // UMat objects for storing frames
+    size_t w {DVS.getWidth()};
+    size_t h {DVS.getHeight()};
+    cv::Mat frame(h, w, CV_32FC3); // raw frame
+    cv::Mat full(h, w*4, CV_32FC3); // processed frames
+    cv::Mat fullGray = full(cv::Rect(0,0,w,h)); // grayscale frame
+    cv::Mat fullRef = full(cv::Rect(w, 0,w,h)); // reference frame
+    cv::Mat fullDiff = full(cv::Rect(2*w,0,w,h)); // difference frame
+    cv::Mat fullOut = full(cv::Rect(3*w,0,w,h)); // output frame
+    cv::Mat tmp(h, w, CV_32FC3); // temporary frames
+
+    // Show frames
+    for(; ok; ok = DVS.update())
     {
-        // Checking if stream is still opened
-        if ( !rawStream.isOpened() )
-        {
-            std::cerr << "Video stream unreadable\n";
-            return UNREADABLE_VIDEO;
-        }
-
-        // Checking if streaming has ended
-        if ( static_cast<char>( cv::waitKey(1) ) == 27 )
-        {
-            std::cout   << "ESC Pressed\n"
-                        << "Stream ending...\n";
-            break;
-        }
-
-        // Update raw frames
-        rawStream >> currRawFrame;
-        if (frameMode) // grayscale mode
-        {
-            cv::cvtColor(currRawFrame, currRawFrame, cv::COLOR_BGR2GRAY);
-        }
-
-        // Checking if video stream is still open
-        if ( currRawFrame.empty() || prevRawFrame.empty() )
-        {
-            std::cerr << "--- Video unaccessible ---\n";
-            return UNREADABLE_VIDEO;
-        }
-
         // Show FPS count
         if (showFPSCount)
         {
-            /*cv::putText(currRawFrame,
-                        std::to_string(rawStream.get(cv::CAP_PROP_FPS)) + " fps",
-                        cv::Point(50, 50),
-                        cv::FONT_HERSHEY_COMPLEX, 1,
-                        (0, 0, 0),
-                        2,
-                        cv::LINE_4);*/ // write fps count on terminal instead
-            
             FPSTickMeter.stop();
-            //std::cout << FPSTickMeter.getTimeMilli() << '\n'; // for debugging purpose
             if ( FPSTickMeter.getTimeMilli() >= showFPSCountPeriod )
             {
-                std::cout << "FPS Count: " << std::to_string(rawStream.get(cv::CAP_PROP_FPS)) << " fps\n";
+                std::cout << "FPS Count: " << std::to_string(DVS.getFPS()) << "\n";
                 FPSTickMeter.reset();
             }
             FPSTickMeter.start();
         }
 
+        // Process to grayscale frame
+        diffToBGR(frame, DVS.getInput(), DVS.getDifference(), 0.0);
+        cvtColor((DVS.getInput()*(1.0f/255.0f)),
+                    tmp, cv::COLOR_GRAY2BGR);
+        tmp.copyTo(fullGray);
+
+        // Reference frame
+        cvtColor((DVS.getReference()*(1.0f/255.0f)),
+                    tmp, cv::COLOR_GRAY2BGR);
+        tmp.copyTo(fullRef);
+
+        // Process to difference frame
+        cvtColor((DVS.getDifference()*(1.0f/255.0f)),
+                    tmp, cv::COLOR_GRAY2BGR);
+        tmp.copyTo(fullDiff);
+
+        // Event frame
+        frame.copyTo(fullOut);
+
+        cv::imshow("Frame", full);
+
         // Displaying frames
-        if (showRawFrame)
+        /*if (showRawFrame)
         {
-            cv::imshow(rawStreamWinName, currRawFrame);
+            cv::imshow(rawStreamWinName, fullRef);
+        }
+        if (showGrayFrame)
+        {
+            cv::imshow(rawStreamWinName, fullRef);
+        }
+        if (showDiffFrame)
+        {
+            cv::imshow(rawStreamWinName, fullRef);
         }
         if (showEventFrame)
         {
-            if (!convMeth) // absdiff
-            {
-                cv::absdiff(currRawFrame, prevRawFrame, eventFrame);
-                cv::imshow(eventStreamWinName, eventFrame);
-            }
-            else if (convMeth == 1) // substract
-            {
-                cv::subtract(currRawFrame, prevRawFrame, eventFrame);
-                cv::imshow(eventStreamWinName, eventFrame);
-            }
+            cv::imshow(eventStreamWinName, fullOut);
+        }*/
 
-            currRawFrame.copyTo(prevRawFrame);
+        // Check if stream has ended
+        char c {(static_cast<char>(cv::pollKey()))};
+        if(c==27 || c == 'q' || c == 'Q')
+        {
+            std::cout   << "ESC Pressed\n"
+                        << "Stream ending...\n";
+            break;
         }
     }
 
