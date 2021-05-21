@@ -103,19 +103,19 @@ bool PyDVS::init(const char* filename, const float thr, const float relaxRate,
 void PyDVS::_initMatrices(const float thr_init)
 {
     // CV_32F 32-bit floating point numbers
-    _gray  = cv::UMat::zeros(_h, _w, CV_8UC1);
-    _in  = cv::UMat::zeros(_h, _w, CV_32F);
-    _ref = cv::UMat::zeros(_h, _w, CV_32F);
-    _diff = cv::UMat::zeros(_h, _w, CV_32F);
-    _absDiff = cv::UMat::zeros(_h, _w, CV_32F);
-    _events = cv::UMat::zeros(_h, _w, CV_32F);
+    _gray  = cv::Mat::zeros(_h, _w, CV_8UC1);
+    _in  = cv::Mat::zeros(_h, _w, CV_32F);
+    _ref = cv::Mat::zeros(_h, _w, CV_32F);
+    _diff = cv::Mat::zeros(_h, _w, CV_32F);
+    _absDiff = cv::Mat::zeros(_h, _w, CV_32F);
+    _events = cv::Mat::zeros(_h, _w, CV_32F);
 
     cout << _relaxRate << "," << _adaptUp << "," << _adaptDown << endl;
     if(thr_init > _baseThresh)
     {
         _baseThresh = thr_init;
     }
-    _thr.mul(cv::Mat::ones(_h, _w, CV_32F), _baseThresh);
+    _thr = _baseThresh * cv::Mat::ones(_h, _w, CV_32F);
     _dvsOp.init(&_in, &_diff, &_ref, &_thr, &_events,
                 _relaxRate, _adaptUp, _adaptDown);
 
@@ -264,27 +264,27 @@ float PyDVS::getAdaptDown()
     return _adaptDown;
 }
 
-cv::UMat& PyDVS::getInput()
+cv::Mat& PyDVS::getInput()
 {
     return _in;
 }
 
-cv::UMat& PyDVS::getReference()
+cv::Mat& PyDVS::getReference()
 {
     return _ref;
 }
 
-cv::UMat& PyDVS::getDifference()
+cv::Mat& PyDVS::getDifference()
 {
     return _diff;
 }
 
-cv::UMat& PyDVS::getEvents()
+cv::Mat& PyDVS::getEvents()
 {
     return _events;
 }
 
-cv::UMat& PyDVS::getThreshold()
+cv::Mat& PyDVS::getThreshold()
 {
     return _thr;
 }

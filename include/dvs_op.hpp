@@ -11,20 +11,20 @@ class DVSOperator: public cv::ParallelLoopBody
 {
 public:
     DVSOperator();
-    DVSOperator(cv::UMat* _src, cv::UMat* _diff, 
-                cv::UMat* _ref, cv::UMat* _thr, cv::UMat* _ev,
+    DVSOperator(cv::Mat* _src, cv::Mat* _diff, 
+                cv::Mat* _ref, cv::Mat* _thr, cv::Mat* _ev,
                 float _relax, float _up, float _down);
-    void init(cv::UMat* _src, cv::UMat* _diff, 
-              cv::UMat* _ref, cv::UMat* _thr, cv::UMat* _ev,
+    void init(cv::Mat* _src, cv::Mat* _diff, 
+              cv::Mat* _ref, cv::Mat* _thr, cv::Mat* _ev,
               const float _relax, const float _up, const float _down);
     void operator()(const cv::Range& range) const;
 
 private:
-    cv::UMat* src;
-    cv::UMat* diff;
-    cv::UMat* ref; 
-    cv::UMat* thr; 
-    cv::UMat* ev;
+    cv::Mat* src;
+    cv::Mat* diff;
+    cv::Mat* ref; 
+    cv::Mat* thr; 
+    cv::Mat* ev;
     float relax;
     float up;
     float down;
