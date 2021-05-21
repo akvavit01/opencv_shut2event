@@ -7,6 +7,14 @@ project(opencv_shut2event VERSION 2.0.0)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
+# Set build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
+        FORCE
+    )
+endif(NOT CMAKE_BUILD_TYPE)
+
 # Find OpenCV package
 find_package(OpenCV REQUIRED)
 

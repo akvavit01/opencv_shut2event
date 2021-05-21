@@ -11,7 +11,7 @@
 // pyDVS
 #include "dvs_emu.hpp"
 
-void diffToBGR(cv::Mat& bgr, const cv::Mat& gray, const cv::Mat& diff, const float thr)
+void diffToBGR(cv::UMat& bgr, const cv::UMat& gray, const cv::UMat& diff, const float thr)
 {
     constexpr int B{0};
     constexpr int G{1};
@@ -22,7 +22,7 @@ void diffToBGR(cv::Mat& bgr, const cv::Mat& gray, const cv::Mat& diff, const flo
         for(size_t col{0}; col < gray.cols; ++col)
         {
             cv::Vec3f color(0.0f, 0.0f, 0.0f);
-            float val {diff.at<float>(row, col)};
+            float val {diff.getMat(cv::ACCESS_RW).at<float>(row, col)};
             if(val > thr)
             {
                 color[G] = 1.0;
@@ -33,12 +33,12 @@ void diffToBGR(cv::Mat& bgr, const cv::Mat& gray, const cv::Mat& diff, const flo
             } 
             else 
             {
-                val = gray.at<float>(row, col)/255.0f;
+                val = gray.getMat(cv::ACCESS_RW).at<float>(row, col)/255.0f;
                 color[R] = val;
                 color[G] = val;
                 color[B] = val;
             }
-            bgr.at<cv::Vec3f>(row, col) = color;
+            bgr.getMat(cv::ACCESS_RW).at<cv::Vec3f>(row, col) = color;
         }
     }
 
@@ -46,6 +46,7 @@ void diffToBGR(cv::Mat& bgr, const cv::Mat& gray, const cv::Mat& diff, const flo
 
 int main(int argc, char *argv[])
 {
+    cv::UMat meow;
     // Showing OpenCV version
     std::cout   << "OpenCV version : " << CV_VERSION << '\n'
                 << "Major version : " << CV_MAJOR_VERSION << '\n'
@@ -237,13 +238,13 @@ int main(int argc, char *argv[])
     // UMat objects for storing frames
     size_t w {DVS.getWidth()};
     size_t h {DVS.getHeight()};
-    cv::Mat frame(h, w, CV_32FC3); // raw frame
-    cv::Mat full(h, w*4, CV_32FC3); // processed frames
-    cv::Mat fullGray = full(cv::Rect(0,0,w,h)); // grayscale frame
-    cv::Mat fullRef = full(cv::Rect(w, 0,w,h)); // reference frame
-    cv::Mat fullDiff = full(cv::Rect(2*w,0,w,h)); // difference frame
-    cv::Mat fullOut = full(cv::Rect(3*w,0,w,h)); // output frame
-    cv::Mat tmp(h, w, CV_32FC3); // temporary frames
+    cv::UMat frame(h, w, CV_32FC3); // raw frame
+    cv::UMat full(h, w*4, CV_32FC3); // processed frames
+    cv::UMat fullGray = full(cv::Rect(0,0,w,h)); // grayscale frame
+    cv::UMat fullRef = full(cv::Rect(w, 0,w,h)); // reference frame
+    cv::UMat fullDiff = full(cv::Rect(2*w,0,w,h)); // difference frame
+    cv::UMat fullOut = full(cv::Rect(3*w,0,w,h)); // output frame
+    cv::UMat tmp(h, w, CV_32FC3); // temporary frames
 
     // Show frames
     for(; ok; ok = DVS.update())
@@ -262,19 +263,16 @@ int main(int argc, char *argv[])
 
         // Process to grayscale frame
         diffToBGR(frame, DVS.getInput(), DVS.getDifference(), 0.0);
-        cvtColor((DVS.getInput()*(1.0f/255.0f)),
-                    tmp, cv::COLOR_GRAY2BGR);
-        tmp.copyTo(fullGray);
+        cvtColor(cv::UMat().mul(DVS.getInput(), (1.0f/255.0f)),
+                 fullGray, cv::COLOR_GRAY2BGR);
 
         // Reference frame
-        cvtColor((DVS.getReference()*(1.0f/255.0f)),
-                    tmp, cv::COLOR_GRAY2BGR);
-        tmp.copyTo(fullRef);
+        cvtColor(cv::UMat().mul(DVS.getReference(), (1.0f/255.0f)),
+                 fullRef, cv::COLOR_GRAY2BGR);
 
         // Process to difference frame
-        cvtColor((DVS.getDifference()*(1.0f/255.0f)),
-                    tmp, cv::COLOR_GRAY2BGR);
-        tmp.copyTo(fullDiff);
+        cvtColor(cv::UMat().mul(DVS.getDifference(), (1.0f/255.0f)),
+                 fullDiff, cv::COLOR_GRAY2BGR);
 
         // Event frame
         frame.copyTo(fullOut);

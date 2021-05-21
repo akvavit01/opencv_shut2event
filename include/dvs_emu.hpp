@@ -45,11 +45,11 @@ public:
     float getRelaxRate();
     float getAdaptUp();
     float getAdaptDown();
-    cv::Mat& getInput();
-    cv::Mat& getReference();
-    cv::Mat& getDifference();
-    cv::Mat& getEvents();
-    cv::Mat& getThreshold();
+    cv::UMat& getInput();
+    cv::UMat& getReference();
+    cv::UMat& getDifference();
+    cv::UMat& getEvents();
+    cv::UMat& getThreshold();
 
     bool update();
     void setAdapt(const float relaxRate, const float adaptUp, 
@@ -57,21 +57,22 @@ public:
 
 private:
     cv::VideoCapture _cap;
-    cv::Mat _in;
-    cv::Mat _frame;
-    cv::Mat _ref;
-    cv::Mat _diff;
-    cv::Mat _absDiff;
-    cv::Mat _thr;
-    cv::Mat _events;
-    cv::Mat _gray;
+    cv::UMat _in;
+    cv::UMat _frame;
+    cv::UMat _ref;
+    cv::UMat _diff;
+    cv::UMat _absDiff;
+    cv::UMat _thr;
+    cv::UMat _events;
+    cv::UMat _gray;
 
     float _relaxRate;
     float _adaptUp;
     float _adaptDown;
     float _baseThresh;
 
-    size_t _w, _h, _fps;
+    //size_t _w, _h, _fps;
+    int _w, _h, _fps;
     bool _open;
     bool _is_vid;
     DVSOperator _dvsOp;

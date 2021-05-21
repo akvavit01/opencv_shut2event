@@ -8,8 +8,8 @@ DVSOperator::DVSOperator()
 
 }
     
-DVSOperator::DVSOperator(cv::Mat* _src, cv::Mat* _diff, 
-                         cv::Mat* _ref, cv::Mat* _thr, cv::Mat* _ev,
+DVSOperator::DVSOperator(cv::UMat* _src, cv::UMat* _diff, 
+                         cv::UMat* _ref, cv::UMat* _thr, cv::UMat* _ev,
                          float _relax, float _up, float _down)
     : src(_src), diff(_diff), ref(_ref), thr(_thr),
       ev(_ev), relax(_relax), up(_up), down(_down)
@@ -18,8 +18,8 @@ DVSOperator::DVSOperator(cv::Mat* _src, cv::Mat* _diff,
 }
 
 // Init method
-void DVSOperator::init(cv::Mat* _src, cv::Mat* _diff, 
-                       cv::Mat* _ref, cv::Mat* _thr, cv::Mat* _ev,
+void DVSOperator::init(cv::UMat* _src, cv::UMat* _diff, 
+                       cv::UMat* _ref, cv::UMat* _thr, cv::UMat* _ev,
                        const float _relax, const float _up, const float _down)
 {
     std::cout << "In DVS_OP init function \n";
@@ -38,11 +38,11 @@ void DVSOperator::operator()(const cv::Range& range) const
 {
     for (int row{range.start}; row < range.end; ++row) 
     {
-        float const* it_src{src->ptr<float>(row)};
-        float* it_diff{diff->ptr<float>(row)};
-        float* it_ref{ref->ptr<float>(row)};
-        float* it_thr{thr->ptr<float>(row)};
-        float* it_ev{ev->ptr<float>(row)};
+        float const* it_src{(*src).getMat(cv::ACCESS_RW).ptr<float>(row)};
+        float* it_diff{(*diff).getMat(cv::ACCESS_RW).ptr<float>(row)};
+        float* it_ref{(*ref).getMat(cv::ACCESS_RW).ptr<float>(row)};
+        float* it_thr{(*thr).getMat(cv::ACCESS_RW).ptr<float>(row)};
+        float* it_ev{(*ev).getMat(cv::ACCESS_RW).ptr<float>(row)};
 
         for (int col(0); col < src->cols; ++col) 
         {
