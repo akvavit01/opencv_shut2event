@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
     const std::string thrStreamWinName      {"Threshold Stream"};
     if (showRawFrame)
     {
-        //cv::namedWindow(rawStreamWinName, cv::WINDOW_OPENGL);
+        cv::namedWindow(rawStreamWinName, cv::WINDOW_OPENGL);
     }
     if (showRefFrame)
     {
@@ -274,7 +274,10 @@ int main(int argc, char *argv[])
         // Displaying frames
         if (showRawFrame)
         {
-
+            /*std::cout   << "row: " << DVS.getRaw().rows 
+                        << "col: " << DVS.getRaw().cols
+                        << "channel:  " << DVS.getRaw().channels() << '\n';*/
+            cv::imshow(rawStreamWinName, DVS.getRaw());
         }
         if (showRefFrame)
         {

@@ -54,7 +54,8 @@ bool PyDVS::init(const int cam_id, const float thr, const float relaxRate,
     }
 
     // set output format as 32-bit floating point with a single channel
-    _cap.set(cv::CAP_PROP_FORMAT, CV_32FC1);
+    _cap.set(cv::CAP_PROP_FORMAT, CV_32FC3);
+
     setAdapt(relaxRate, adaptUp, adaptDown, thr);
     _initMatrices(thr);
 
@@ -81,7 +82,8 @@ bool PyDVS::init(const std::string& filename, const float thr, const float relax
     _get_fps();
 
     // set output format as 32-bit floating point with a single channel
-    _cap.set(cv::CAP_PROP_FORMAT, CV_32FC1);
+    _cap.set(cv::CAP_PROP_FORMAT, CV_32FC3);
+
     setAdapt(relaxRate, adaptUp, adaptDown, thr);
     _initMatrices(thr);
 
@@ -107,8 +109,9 @@ bool PyDVS::init(const char* filename, const float thr, const float relaxRate,
     _get_size();
     _get_fps();
 
-    // set output format as 32-bit floating point with a single channel
-    _cap.set(cv::CAP_PROP_FORMAT, CV_32FC1);
+    // set output format as 32-bit floating point with a BGR channel
+    _cap.set(cv::CAP_PROP_FORMAT, CV_32FC3);
+
     setAdapt(relaxRate, adaptUp, adaptDown, thr);
     _initMatrices(thr);
 
@@ -117,7 +120,8 @@ bool PyDVS::init(const char* filename, const float thr, const float relaxRate,
 
 void PyDVS::_initMatrices(const float thr_init)
 {
-    // CV_32F 32-bit floating point numbers
+    // 32-bit floating point numbers
+    _frame = cv::Mat::zeros(_h, _w, CV_32FC3);
     _gray  = cv::Mat::zeros(_h, _w, CV_8UC1);
     _in  = cv::Mat::zeros(_h, _w, CV_32F);
     _ref = cv::Mat::zeros(_h, _w, CV_32F);
@@ -278,6 +282,11 @@ float PyDVS::getAdaptUp()
 float PyDVS::getAdaptDown()
 {
     return _adaptDown;
+}
+
+cv::Mat& PyDVS::getRaw()
+{
+    return _frame;
 }
 
 cv::Mat& PyDVS::getInput()

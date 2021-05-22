@@ -39,6 +39,7 @@ public:
     float getRelaxRate();
     float getAdaptUp();
     float getAdaptDown();
+    cv::Mat& getRaw();
     cv::Mat& getInput();
     cv::Mat& getReference();
     cv::Mat& getDifference();
