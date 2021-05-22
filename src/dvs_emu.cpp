@@ -152,7 +152,8 @@ bool PyDVS::_set_size()
     {
         size_t w = _cap.get(cv::CAP_PROP_FRAME_WIDTH);
         size_t h = _cap.get(cv::CAP_PROP_FRAME_HEIGHT);
-        bool success = true;
+        
+        bool success {true};
         success &= _cap.set(cv::CAP_PROP_FRAME_WIDTH, _w);
         success &= _cap.set(cv::CAP_PROP_FRAME_HEIGHT, _h);
 
@@ -173,7 +174,8 @@ bool PyDVS::_set_fps()
     if(_open)
     {
         size_t fps = _cap.get(cv::CAP_PROP_FPS);
-        bool success = true;
+        
+        bool success{true};
         success &= _cap.set(cv::CAP_PROP_FPS, _fps);
         if(!success)
         {
