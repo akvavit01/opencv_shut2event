@@ -5,9 +5,6 @@
 #include <stdint.h>
 #include <string>
 #include <opencv2/opencv.hpp>
-// #include "opencv2/core.hpp"
-// #include "opencv/videoio.hpp"
-// #include "opencv2/highgui/highgui.hpp"
 #include <opencv2/opencv_modules.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
