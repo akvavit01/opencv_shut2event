@@ -89,7 +89,11 @@ bool PyDVS::init(const std::string& filename, const float thr, const float relax
 bool PyDVS::init(const char* filename, const float thr, const float relaxRate, 
                  const float adaptUp, const float adaptDown)
 {
-    _cap = cv::VideoCapture(filename);
+    std::vector<int> vidParams;
+    vidParams.push_back(cv::CAP_PROP_HW_ACCELERATION); // hardware acceleration
+    vidParams.push_back(cv::VIDEO_ACCELERATION_ANY);
+
+    _cap = cv::VideoCapture(filename, cv::CAP_ANY, vidParams);
     _open = _cap.isOpened();
     if(!_open)
     {
@@ -115,7 +119,6 @@ void PyDVS::_initMatrices(const float thr_init)
     _in  = cv::Mat::zeros(_h, _w, CV_32F);
     _ref = cv::Mat::zeros(_h, _w, CV_32F);
     _diff = cv::Mat::zeros(_h, _w, CV_32F);
-    _absDiff = cv::Mat::zeros(_h, _w, CV_32F);
     _events = cv::Mat::zeros(_h, _w, CV_32F);
 
     std::cout << _relaxRate << "," << _adaptUp << "," << _adaptDown << '\n';
@@ -124,7 +127,7 @@ void PyDVS::_initMatrices(const float thr_init)
         _baseThresh = thr_init;
     }
     _thr = _baseThresh * cv::Mat::ones(_h, _w, CV_32F);
-    _dvsOp.init(&_in, &_diff, &_ref, &_thr, &_events,
+    _dvsOp.init(&_in, &_diff, &_ref, &_thr,
                 _relaxRate, _adaptUp, _adaptDown);
 
 }

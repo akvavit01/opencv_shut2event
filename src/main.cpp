@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
     const std::string keys{ "{h help usage ?        |                   | show help message                 }"
                             "{vid-name              | /dev/video0       | link of video stream              }"
                             "{show-raw-frame        |                   | show raw frame                    }"
+                            "{show-ref-frame        |                   | show ref frame                    }"
                             "{show-gray-frame       |                   | show grayscale frame              }"
                             "{show-event-frame      |                   | show event frame                  }"
                             "{show-diff-frame       |                   | show difference frame             }"
@@ -96,22 +97,49 @@ int main(int argc, char *argv[])
             std::cout << "Link or path to video stream. Can be live stream or video recording.\n\n";
         }
 
-        // Details for flag on showing conventional frames
+        // Details for flag on showing event frames
         else if (   args.get<std::string>("h")     == "show-event-frame"    ||
                     args.get<std::string>("?")     == "show-event-frame"    ||
                     args.get<std::string>("help")  == "show-event-frame"    ||
                     args.get<std::string>("usage") == "show-event-frame"    )
         {
-            std::cout << "Toggle to show conventional frame streams.\n\n";
+            std::cout << "Toggle to show event frame streams.\n\n";
         }
 
-        // Details for flag on showing conventional frames
+        // Details for flag on showing raw frames
         else if (   args.get<std::string>("h")     == "show-raw-frame"      ||
                     args.get<std::string>("?")     == "show-raw-frame"      ||
                     args.get<std::string>("help")  == "show-raw-frame"      ||
                     args.get<std::string>("usage") == "show-raw-frame"      )
         {
-            std::cout << "Toggle to show event frame streams.\n\n";
+            std::cout << "Toggle to show raw frame streams.\n\n";
+        }
+
+        // Details for flag on showing reference frames
+        else if (   args.get<std::string>("h")     == "show-ref-frame"      ||
+                    args.get<std::string>("?")     == "show-ref-frame"      ||
+                    args.get<std::string>("help")  == "show-ref-frame"      ||
+                    args.get<std::string>("usage") == "show-ref-frame"      )
+        {
+            std::cout << "Toggle to show reference frame streams.\n\n";
+        }
+
+        // Details for flag on showing grayscale frames
+        else if (   args.get<std::string>("h")     == "show-gray-frame"      ||
+                    args.get<std::string>("?")     == "show-gray-frame"      ||
+                    args.get<std::string>("help")  == "show-gray-frame"      ||
+                    args.get<std::string>("usage") == "show-gray-frame"      )
+        {
+            std::cout << "Toggle to show grayscale frame streams.\n\n";
+        }
+
+        // Details for flag on showing difference frames
+        else if (   args.get<std::string>("h")     == "show-diff-frame"      ||
+                    args.get<std::string>("?")     == "show-diff-frame"      ||
+                    args.get<std::string>("help")  == "show-diff-frame"      ||
+                    args.get<std::string>("usage") == "show-diff-frame"      )
+        {
+            std::cout << "Toggle to show difference frame streams.\n\n";
         }
 
         // Details for flag on showing fps count
@@ -176,10 +204,10 @@ int main(int argc, char *argv[])
 
     // Capturing CLI arguments value
     const std::string vidName       { args.get<std::string>("vid-name") }; // video stream link
-    /*const bool showRawFrame         { args.has("show-raw-frame") }; // show raw frame or not
+    const bool showRawFrame         { args.has("show-raw-frame") }; // show raw frame or not
     const bool showGrayFrame        { args.has("show-gray-frame") }; // show grayscale frame or not
     const bool showDiffFrame        { args.has("show-diff-frame") }; // show difference frame or not
-    const bool showEventFrame       { args.has("show-event-frame") };*/ // show event frame or not
+    const bool showEventFrame       { args.has("show-event-frame") }; // show event frame or not
     const bool showFPSCount         { args.has("write-fps") }; // show fps count
     const size_t showFPSCountPeriod { args.get<size_t>("write-fps-freq") }; // show fps count frequency
     const float thr                 { args.get<float>("thr") }; // threshold value for pyDVS processing
@@ -200,7 +228,7 @@ int main(int argc, char *argv[])
     std::cout << "Stream is starting...\n";
 
     // Windows
-    /*const std::string rawStreamWinName      {"Raw Stream"};
+    const std::string rawStreamWinName      {"Raw Stream"};
     const std::string grayStreamWinName     {"Grayscale Stream"};
     const std::string diffStreamWinName     {"Difference Stream"};
     const std::string eventStreamWinName    {"Event Frames Stream"};
@@ -219,7 +247,7 @@ int main(int argc, char *argv[])
     if (showEventFrame)
     {
         cv::namedWindow(eventStreamWinName, cv::WINDOW_OPENGL);
-    }*/
+    }
 
     // Initialize fps counter time
     cv::TickMeter FPSTickMeter;
@@ -238,12 +266,10 @@ int main(int argc, char *argv[])
     size_t w {DVS.getWidth()};
     size_t h {DVS.getHeight()};
     cv::Mat frame(h, w, CV_32FC3); // raw frame
-    cv::Mat full(h, w*4, CV_32FC3); // processed frames
-    cv::Mat fullGray = full(cv::Rect(0,0,w,h)); // grayscale frame
-    cv::Mat fullRef = full(cv::Rect(w, 0,w,h)); // reference frame
-    cv::Mat fullDiff = full(cv::Rect(2*w,0,w,h)); // difference frame
-    cv::Mat fullOut = full(cv::Rect(3*w,0,w,h)); // output frame
-    cv::Mat tmp(h, w, CV_32FC3); // temporary frames
+    cv::Mat fullGray(h, w, CV_32F); // grayscale frame
+    cv::Mat fullRef(h, w, CV_32F); // reference frame
+    cv::Mat fullDiff(h, w, CV_32F); // difference frame
+    cv::Mat fullOut(h, w, CV_32FC3); // output frame
 
     // Show frames
     for(; ok; ok = DVS.update())
@@ -262,42 +288,39 @@ int main(int argc, char *argv[])
 
         // Process to grayscale frame
         diffToBGR(frame, DVS.getInput(), DVS.getDifference(), 0.0);
-        cvtColor((DVS.getInput()*(1.0f/255.0f)),
-                    tmp, cv::COLOR_GRAY2BGR);
-        tmp.copyTo(fullGray);
+        fullGray = DVS.getInput()*(1.0f/255.0f);
 
         // Reference frame
-        cvtColor((DVS.getReference()*(1.0f/255.0f)),
-                    tmp, cv::COLOR_GRAY2BGR);
-        tmp.copyTo(fullRef);
+        //cvtColor((DVS.getReference()*(1.0f/255.0f)),
+        //         fullRef, cv::COLOR_GRAY2BGR);
+        fullRef = DVS.getReference()*(1.0f/255.0f);
 
         // Process to difference frame
-        cvtColor((DVS.getDifference()*(1.0f/255.0f)),
-                    tmp, cv::COLOR_GRAY2BGR);
-        tmp.copyTo(fullDiff);
+        //cvtColor((DVS.getDifference()*(1.0f/255.0f)),
+        //         fullDiff, cv::COLOR_GRAY2BGR);
+        fullDiff = DVS.getDifference()*(1.0f/255.0f);
 
         // Event frame
         frame.copyTo(fullOut);
 
-        cv::imshow("Frame", full);
 
         // Displaying frames
-        /*if (showRawFrame)
+        if (showRawFrame)
         {
             cv::imshow(rawStreamWinName, fullRef);
         }
         if (showGrayFrame)
         {
-            cv::imshow(rawStreamWinName, fullRef);
+            cv::imshow(grayStreamWinName, fullGray);
         }
         if (showDiffFrame)
         {
-            cv::imshow(rawStreamWinName, fullRef);
+            cv::imshow(diffStreamWinName, fullDiff);
         }
         if (showEventFrame)
         {
             cv::imshow(eventStreamWinName, fullOut);
-        }*/
+        }
 
         // Check if stream has ended
         char c {(static_cast<char>(cv::pollKey()))};

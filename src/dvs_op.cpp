@@ -9,17 +9,17 @@ DVSOperator::DVSOperator()
 }
     
 DVSOperator::DVSOperator(cv::Mat* _src, cv::Mat* _diff, 
-                         cv::Mat* _ref, cv::Mat* _thr, cv::Mat* _ev,
+                         cv::Mat* _ref, cv::Mat* _thr,
                          float _relax, float _up, float _down)
     : src(_src), diff(_diff), ref(_ref), thr(_thr),
-      ev(_ev), relax(_relax), up(_up), down(_down)
+      relax(_relax), up(_up), down(_down)
 {
 
 }
 
 // Init method
 void DVSOperator::init(cv::Mat* _src, cv::Mat* _diff, 
-                       cv::Mat* _ref, cv::Mat* _thr, cv::Mat* _ev,
+                       cv::Mat* _ref, cv::Mat* _thr,
                        const float _relax, const float _up, const float _down)
 {
     std::cout << "In DVS_OP init function \n";
@@ -27,7 +27,6 @@ void DVSOperator::init(cv::Mat* _src, cv::Mat* _diff,
     diff = _diff;
     ref = _ref; 
     thr = _thr;
-    ev = _ev; 
     relax = _relax; 
     up = _up;
     down = _down;
@@ -42,7 +41,6 @@ void DVSOperator::operator()(const cv::Range& range) const
         float* it_diff{diff->ptr<float>(row)};
         float* it_ref{ref->ptr<float>(row)};
         float* it_thr{thr->ptr<float>(row)};
-        float* it_ev{ev->ptr<float>(row)};
 
         for (int col(0); col < src->cols; ++col) 
         {
@@ -65,7 +63,6 @@ void DVSOperator::operator()(const cv::Range& range) const
             ++it_diff; 
             ++it_ref;
             ++it_thr; 
-            ++it_ev;
         }
     }
 }
