@@ -11,39 +11,6 @@
 // pyDVS
 #include "dvs_emu.hpp"
 
-void diffToBGR(cv::Mat& bgr, const cv::Mat& gray, const cv::Mat& diff, const float thr)
-{
-    constexpr int B{0};
-    constexpr int G{1};
-    constexpr int R{2};
-
-    for(size_t row{0}; row < gray.rows; ++row)
-    {
-        for(size_t col{0}; col < gray.cols; ++col)
-        {
-            cv::Vec3f color(0.0f, 0.0f, 0.0f);
-            float val {diff.at<float>(row, col)};
-            if(val > thr)
-            {
-                color[G] = 1.0;
-            } 
-            else if(val < -thr)
-            {
-                color[R] = 1.0;
-            } 
-            else 
-            {
-                val = gray.at<float>(row, col)/255.0f;
-                color[R] = 0.0;
-                color[G] = 0.0;
-                color[B] = 0.0;
-            }
-            bgr.at<cv::Vec3f>(row, col) = color;
-        }
-    }
-
-}
-
 int main(int argc, char *argv[])
 {
     // Showing OpenCV version
@@ -71,8 +38,8 @@ int main(int argc, char *argv[])
                             "{write-fps-freq        | 1000              | how fast to print fps count in ms }"
                             "{thr                   | 10.0              | pyDVS emulator threshold          }"
                             "{rel-rate              | 0.999             | pyDVS emulator relax rate         }"
-                            "{adapt-up              | 1.5               | pyDVS emulator adapt up           }"
-                            "{adapt-down            | 0.99              | pyDVS emulator adapt down         }" };
+                            "{adapt-up              | 1.0               | pyDVS emulator adapt up           }"
+                            "{adapt-down            | 1.0               | pyDVS emulator adapt down         }" };
 
     cv::CommandLineParser args(argc, argv, keys);
 
@@ -253,7 +220,8 @@ int main(int argc, char *argv[])
     const std::string refStreamWinName      {"Reference Stream"};
     const std::string grayStreamWinName     {"Grayscale Stream"};
     const std::string diffStreamWinName     {"Difference Stream"};
-    const std::string eventStreamWinName    {"Event Frames Stream"};
+    const std::string eventStreamWinName    {"Event Stream"};
+    const std::string thrStreamWinName      {"Threshold Stream"};
     if (showRawFrame)
     {
         cv::namedWindow(rawStreamWinName, cv::WINDOW_OPENGL);
@@ -288,15 +256,6 @@ int main(int argc, char *argv[])
                 << "Adapt up = " << DVS.getAdaptUp() << '\n'
                 << "Adapt down = " << DVS.getAdaptDown() << '\n';
 
-    // UMat objects for storing frames
-    size_t w {DVS.getWidth()};
-    size_t h {DVS.getHeight()};
-    cv::Mat frame(h, w, CV_32FC3); // raw frame
-    cv::Mat fullGray(h, w, CV_32F); // grayscale frame
-    cv::Mat fullRef(h, w, CV_32F); // reference frame
-    cv::Mat fullDiff(h, w, CV_32F); // difference frame
-    cv::Mat fullOut(h, w, CV_32FC3); // output frame
-
     // Show frames
     for(; ok; ok = DVS.update())
     {
@@ -312,20 +271,6 @@ int main(int argc, char *argv[])
             FPSTickMeter.start();
         }
 
-        // Process to grayscale frame
-        fullGray = DVS.getInput()*(1.0f/255.0f);
-
-        // Reference frame
-        fullRef = DVS.getReference()*(1.0f/255.0f);
-
-        // Process to difference frame
-        fullDiff = DVS.getDifference()*(1.0f/255.0f);
-
-        // Event frame
-        diffToBGR(frame, DVS.getInput(), DVS.getDifference(), 0.0);
-        frame.copyTo(fullOut);
-        //fullOut = DVS.getEvents();
-
         // Displaying frames
         if (showRawFrame)
         {
@@ -333,19 +278,19 @@ int main(int argc, char *argv[])
         }
         if (showRefFrame)
         {
-            cv::imshow(refStreamWinName, fullRef);
+            cv::imshow(refStreamWinName, DVS.getReference()*(1.0f/255.0f));
         }
         if (showGrayFrame)
         {
-            cv::imshow(grayStreamWinName, fullGray);
+            cv::imshow(grayStreamWinName, DVS.getInput()*(1.0f/255.0f));
         }
         if (showDiffFrame)
         {
-            cv::imshow(diffStreamWinName, fullDiff);
+            cv::imshow(diffStreamWinName, DVS.getDifference()*(1.0f/255.0f));
         }
         if (showEventFrame)
         {
-            cv::imshow(eventStreamWinName, fullOut);
+            cv::imshow(eventStreamWinName, DVS.getEvents());
         }
 
         // Check if stream has ended

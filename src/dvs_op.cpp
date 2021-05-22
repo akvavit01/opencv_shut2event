@@ -42,7 +42,6 @@ void DVSOperator::operator()(const cv::Range& range) const
         float* it_diff{diff->ptr<float>(row)};
         float* it_ref{ref->ptr<float>(row)};
         float* it_thr{thr->ptr<float>(row)};
-        //float* it_ev{ev->ptr<float>(row)};
 
         for (int col(0); col < src->cols; ++col) 
         {
@@ -54,39 +53,40 @@ void DVSOperator::operator()(const cv::Range& range) const
             if(test)
             {
                 (*it_thr) = (*it_thr) * up;
-
-                // Process event frame
-                // TODO
-                if ((*it_diff) < -(*it_thr)) // negative event
-                {
-                    //ev->at<float>(row, col, 0) = 0.0; // blue
-                    //ev->at<float>(row, col, 1) = 0.0; // green
-                    //ev->at<float>(row, col, 2) = 1.0; // red
-                }
-                else if ((*it_diff) > (*it_thr)) // positive event
-                {
-                    //ev->at<float>(row, col, 0) = 1.0; // blue
-                    //ev->at<float>(row, col, 1) = 0.0; // green
-                    //ev->at<float>(row, col, 2) = 0.0; // red
-                }
-                else // no event
-                {
-                    //ev->at<float>(row, col, 0) = 0.0; // blue
-                    //ev->at<float>(row, col, 1) = 0.0; // green
-                    //ev->at<float>(row, col, 2) = 0.0; // red
-                }
             }
             else
             {
                 (*it_thr) = (*it_thr) * down;
             }
+
+            // Processing event frame
+            cv::Vec3f color(0.0f, 0.0f, 0.0f);
+            float val {diff->at<float>(row, col)};
+            if(val > (*it_thr)) // positive event
+            {
+                color[2] = 0.0; // red
+                color[1] = 0.0; // green
+                color[0] = 1.0; // blue
+            } 
+            else if(val < -(*it_thr)) // negative event
+            {
+                color[2] = 1.0; // red
+                color[1] = 0.0; // green
+                color[0] = 0.0; // blue
+            } 
+            else // no event
+            {
+                color[2] = 0.0; // red
+                color[1] = 0.0; // green
+                color[0] = 0.0; // blue
+            }
+            ev->at<cv::Vec3f>(row, col) = color;
             
             //advance pointers
             ++it_src; 
             ++it_diff; 
             ++it_ref;
             ++it_thr; 
-            //++it_ev;
         }
     }
 }

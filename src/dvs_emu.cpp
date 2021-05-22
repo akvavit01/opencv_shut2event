@@ -119,7 +119,7 @@ void PyDVS::_initMatrices(const float thr_init)
     _in  = cv::Mat::zeros(_h, _w, CV_32F);
     _ref = cv::Mat::zeros(_h, _w, CV_32F);
     _diff = cv::Mat::zeros(_h, _w, CV_32F);
-    _events = cv::Mat::zeros(_h, _w, CV_32F);
+    _events = cv::Mat::zeros(_h, _w, CV_32FC3);
 
     std::cout << _relaxRate << "," << _adaptUp << "," << _adaptDown << '\n';
     if(thr_init > _baseThresh)
