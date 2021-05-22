@@ -28,7 +28,11 @@ PyDVS::~PyDVS()
 bool PyDVS::init(const int cam_id, const float thr, const float relaxRate, 
                  const float adaptUp, const float adaptDown)
 {
-    _cap = cv::VideoCapture(cam_id);
+    std::vector<int> vidParams;
+    vidParams.push_back(cv::CAP_PROP_HW_ACCELERATION); // hardware acceleration
+    vidParams.push_back(cv::VIDEO_ACCELERATION_ANY);
+
+    _cap = cv::VideoCapture(cam_id, cv::CAP_ANY, vidParams);
     _open = _cap.isOpened();
     if(!_open)
     {
@@ -58,7 +62,11 @@ bool PyDVS::init(const int cam_id, const float thr, const float relaxRate,
 bool PyDVS::init(const std::string& filename, const float thr, const float relaxRate, 
                  const float adaptUp, const float adaptDown)
 {
-    _cap = cv::VideoCapture(filename);
+    std::vector<int> vidParams;
+    vidParams.push_back(cv::CAP_PROP_HW_ACCELERATION); // hardware acceleration
+    vidParams.push_back(cv::VIDEO_ACCELERATION_ANY);
+
+    _cap = cv::VideoCapture(filename, cv::CAP_ANY, vidParams);
     _open = _cap.isOpened();
     if(!_open)
     {
