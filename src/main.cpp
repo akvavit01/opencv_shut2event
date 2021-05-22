@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
     // CLI argument parser keys
     const std::string keys{ "{h help usage ?        |                   | show help message                 }"
                             "{vid-name              | /dev/video0       | link of video stream              }"
+                            "{show-all-frame        |                   | show all frame                    }"
                             "{show-raw-frame        |                   | show raw frame                    }"
                             "{show-ref-frame        |                   | show ref frame                    }"
                             "{show-gray-frame       |                   | show grayscale frame              }"
@@ -95,6 +96,15 @@ int main(int argc, char *argv[])
             args.get<std::string>("usage") == "vid-name"    )
         {
             std::cout << "Link or path to video stream. Can be live stream or video recording.\n\n";
+        }
+
+        // Details for flag on showing all frames
+        else if (   args.get<std::string>("h")     == "show-all-frame"      ||
+                    args.get<std::string>("?")     == "show-all-frame"      ||
+                    args.get<std::string>("help")  == "show-all-frame"      ||
+                    args.get<std::string>("usage") == "show-all-frame"      )
+        {
+            std::cout << "Toggle to show all frame streams.\n\n";
         }
 
         // Details for flag on showing event frames
@@ -204,16 +214,27 @@ int main(int argc, char *argv[])
 
     // Capturing CLI arguments value
     const std::string vidName       { args.get<std::string>("vid-name") }; // video stream link
-    const bool showRawFrame         { args.has("show-raw-frame") }; // show raw frame or not
-    const bool showGrayFrame        { args.has("show-gray-frame") }; // show grayscale frame or not
-    const bool showDiffFrame        { args.has("show-diff-frame") }; // show difference frame or not
-    const bool showEventFrame       { args.has("show-event-frame") }; // show event frame or not
+    const bool showAllFrame         { args.has("show-all-frame") }; // show all frame
+    bool showRawFrame               { args.has("show-raw-frame") }; // show raw frame or not
+    bool showRefFrame               { args.has("show-ref-frame") }; // show raw frame or not
+    bool showGrayFrame              { args.has("show-gray-frame") }; // show grayscale frame or not
+    bool showDiffFrame              { args.has("show-diff-frame") }; // show difference frame or not
+    bool showEventFrame             { args.has("show-event-frame") }; // show event frame or not
     const bool showFPSCount         { args.has("write-fps") }; // show fps count
     const size_t showFPSCountPeriod { args.get<size_t>("write-fps-freq") }; // show fps count frequency
     const float thr                 { args.get<float>("thr") }; // threshold value for pyDVS processing
     const float relRate             { args.get<float>("rel-rate") }; // relax rate value for pyDVS processing
     const float adaptUp             { args.get<float>("adapt-up") }; // adapt up value for pyDVS processing
     const float adaptDown           { args.get<float>("adapt-down") }; // adapt down value for pyDVS processing
+
+    if (showAllFrame)
+    {
+        showRawFrame = true;
+        showRefFrame = true;
+        showGrayFrame = true;
+        showDiffFrame = true;
+        showEventFrame = true;
+    }
 
     // PyDVS object
     PyDVS DVS;
@@ -229,12 +250,17 @@ int main(int argc, char *argv[])
 
     // Windows
     const std::string rawStreamWinName      {"Raw Stream"};
+    const std::string refStreamWinName      {"Reference Stream"};
     const std::string grayStreamWinName     {"Grayscale Stream"};
     const std::string diffStreamWinName     {"Difference Stream"};
     const std::string eventStreamWinName    {"Event Frames Stream"};
     if (showRawFrame)
     {
         cv::namedWindow(rawStreamWinName, cv::WINDOW_OPENGL);
+    }
+    if (showRefFrame)
+    {
+        cv::namedWindow(refStreamWinName, cv::WINDOW_OPENGL);
     }
     if (showGrayFrame)
     {
@@ -287,27 +313,27 @@ int main(int argc, char *argv[])
         }
 
         // Process to grayscale frame
-        diffToBGR(frame, DVS.getInput(), DVS.getDifference(), 0.0);
         fullGray = DVS.getInput()*(1.0f/255.0f);
 
         // Reference frame
-        //cvtColor((DVS.getReference()*(1.0f/255.0f)),
-        //         fullRef, cv::COLOR_GRAY2BGR);
         fullRef = DVS.getReference()*(1.0f/255.0f);
 
         // Process to difference frame
-        //cvtColor((DVS.getDifference()*(1.0f/255.0f)),
-        //         fullDiff, cv::COLOR_GRAY2BGR);
         fullDiff = DVS.getDifference()*(1.0f/255.0f);
 
         // Event frame
+        diffToBGR(frame, DVS.getInput(), DVS.getDifference(), 0.0);
         frame.copyTo(fullOut);
 
 
         // Displaying frames
         if (showRawFrame)
         {
-            cv::imshow(rawStreamWinName, fullRef);
+
+        }
+        if (showRefFrame)
+        {
+            cv::imshow(refStreamWinName, fullRef);
         }
         if (showGrayFrame)
         {
