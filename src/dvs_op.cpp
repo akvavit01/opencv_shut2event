@@ -48,7 +48,7 @@ void DVSOperator::operator()(const cv::Range& range) const
         {
             (*it_diff) = (*it_src) - (*it_ref);
             bool test {(((*it_diff) < -(*it_thr)) || ((*it_diff) > (*it_thr)))};
-            (*it_diff) = (*it_diff) * ((float)test);
+            (*it_diff) = (*it_diff) * (static_cast<float>(test));
             (*it_ref) = (relax * (*it_ref)) + (*it_diff);
             
             if(test)
