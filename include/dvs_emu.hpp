@@ -55,7 +55,6 @@ private:
     cv::Mat _frame;
     cv::Mat _ref;
     cv::Mat _diff;
-    cv::Mat _absDiff;
     cv::Mat _thr;
     cv::Mat _events;
     cv::Mat _gray;

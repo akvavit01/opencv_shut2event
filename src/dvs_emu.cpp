@@ -53,6 +53,8 @@ bool PyDVS::init(const int cam_id, const float thr, const float relaxRate,
         success &= _set_fps();
     }
 
+    // set output format as 32-bit floating point with a single channel
+    _cap.set(cv::CAP_PROP_FORMAT, CV_32FC1);
     setAdapt(relaxRate, adaptUp, adaptDown, thr);
     _initMatrices(thr);
 
@@ -104,6 +106,7 @@ bool PyDVS::init(const char* filename, const float thr, const float relaxRate,
     _is_vid = true;
     _get_size();
     _get_fps();
+
     // set output format as 32-bit floating point with a single channel
     _cap.set(cv::CAP_PROP_FORMAT, CV_32FC1);
     setAdapt(relaxRate, adaptUp, adaptDown, thr);

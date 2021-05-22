@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
     const std::string thrStreamWinName      {"Threshold Stream"};
     if (showRawFrame)
     {
-        cv::namedWindow(rawStreamWinName, cv::WINDOW_OPENGL);
+        //cv::namedWindow(rawStreamWinName, cv::WINDOW_OPENGL);
     }
     if (showRefFrame)
     {
