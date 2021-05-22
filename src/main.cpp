@@ -34,9 +34,9 @@ void diffToBGR(cv::Mat& bgr, const cv::Mat& gray, const cv::Mat& diff, const flo
             else 
             {
                 val = gray.at<float>(row, col)/255.0f;
-                color[R] = val;
-                color[G] = val;
-                color[B] = val;
+                color[R] = 0.0;
+                color[G] = 0.0;
+                color[B] = 0.0;
             }
             bgr.at<cv::Vec3f>(row, col) = color;
         }
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
         // Event frame
         diffToBGR(frame, DVS.getInput(), DVS.getDifference(), 0.0);
         frame.copyTo(fullOut);
-
+        //fullOut = DVS.getEvents();
 
         // Displaying frames
         if (showRawFrame)

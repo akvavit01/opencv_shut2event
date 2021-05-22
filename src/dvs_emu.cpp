@@ -127,7 +127,7 @@ void PyDVS::_initMatrices(const float thr_init)
         _baseThresh = thr_init;
     }
     _thr = _baseThresh * cv::Mat::ones(_h, _w, CV_32F);
-    _dvsOp.init(&_in, &_diff, &_ref, &_thr,
+    _dvsOp.init(&_in, &_diff, &_ref, &_thr, &_events,
                 _relaxRate, _adaptUp, _adaptDown);
 
 }
