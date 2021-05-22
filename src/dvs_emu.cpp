@@ -32,7 +32,7 @@ bool PyDVS::init(const int cam_id, const float thr, const float relaxRate,
     _open = _cap.isOpened();
     if(!_open)
     {
-        cerr << "Error. Cannot open video feed!" << endl;
+        std::cerr << "Error. Cannot open video feed!\n";
         return false;
     }
     
@@ -55,14 +55,14 @@ bool PyDVS::init(const int cam_id, const float thr, const float relaxRate,
     return success;
 }
 
-bool PyDVS::init(const string& filename, const float thr, const float relaxRate, 
+bool PyDVS::init(const std::string& filename, const float thr, const float relaxRate, 
                  const float adaptUp, const float adaptDown)
 {
     _cap = cv::VideoCapture(filename);
     _open = _cap.isOpened();
     if(!_open)
     {
-        cerr << "Init. Cannot open video feed!" << endl;
+        std::cerr << "Init. Cannot open video feed!\n";
         return false;
     }
 
@@ -85,7 +85,7 @@ bool PyDVS::init(const char* filename, const float thr, const float relaxRate,
     _open = _cap.isOpened();
     if(!_open)
     {
-        cerr << "Init. Cannot open video feed!" << endl;
+        std::cerr << "Init. Cannot open video feed!\n";
         return false;
     }
 
@@ -110,7 +110,7 @@ void PyDVS::_initMatrices(const float thr_init)
     _absDiff = cv::Mat::zeros(_h, _w, CV_32F);
     _events = cv::Mat::zeros(_h, _w, CV_32F);
 
-    cout << _relaxRate << "," << _adaptUp << "," << _adaptDown << endl;
+    std::cout << _relaxRate << "," << _adaptUp << "," << _adaptDown << '\n';
     if(thr_init > _baseThresh)
     {
         _baseThresh = thr_init;

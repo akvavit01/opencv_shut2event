@@ -13,9 +13,6 @@
 
 #include "dvs_op.hpp"
 
-// using namespace cv;
-using namespace std;
-
 class PyDVS{
 
 public:
@@ -25,7 +22,7 @@ public:
     bool init(const int cam_id=0, const float thr=12.75f,
               const float relaxRate=1.0f, const float adaptUp=1.0f, 
               const float adaptDown=1.0f);
-    bool init(const string& filename, const float thr=12.75f,
+    bool init(const std::string& filename, const float thr=12.75f,
               const float relaxRate=1.0f, const float adaptUp=1.0f, 
               const float adaptDown=1.0f);
     bool init(const char* filename, const float thr=12.75f,
