@@ -36,8 +36,8 @@ int main(int argc, char *argv[])
                             "{show-diff-frame       |                   | show difference frame             }"
                             "{write-fps             |                   | show fps count on raw frame       }"
                             "{write-fps-freq        | 1000              | how fast to print fps count in ms }"
-                            "{thr                   | 10.0              | pyDVS emulator threshold          }"
-                            "{rel-rate              | 0.999             | pyDVS emulator relax rate         }"
+                            "{thr                   | 50.0              | pyDVS emulator threshold          }"
+                            "{rel-rate              | 1.0               | pyDVS emulator relax rate         }"
                             "{adapt-up              | 1.0               | pyDVS emulator adapt up           }"
                             "{adapt-down            | 1.0               | pyDVS emulator adapt down         }" };
 
@@ -274,9 +274,6 @@ int main(int argc, char *argv[])
         // Displaying frames
         if (showRawFrame)
         {
-            /*std::cout   << "row: " << DVS.getRaw().rows 
-                        << "col: " << DVS.getRaw().cols
-                        << "channel:  " << DVS.getRaw().channels() << '\n';*/
             cv::imshow(rawStreamWinName, DVS.getRaw());
         }
         if (showRefFrame)
