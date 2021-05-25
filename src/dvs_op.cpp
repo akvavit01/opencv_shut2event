@@ -64,15 +64,15 @@ void DVSOperator::operator()(const cv::Range& range) const
             float val {diff->at<float>(row, col)};
             if(val > (*it_thr)) // negative event
             {
-                color[2] = 1.0; // red
-                color[1] = 0.0; // green
-                color[0] = 0.0; // blue
-            } 
-            else if(val < -(*it_thr)) // positive event
-            {
                 color[2] = 0.0; // red
                 color[1] = 0.0; // green
                 color[0] = 1.0; // blue
+            } 
+            else if(val < -(*it_thr)) // positive event
+            {
+                color[2] = 1.0; // red
+                color[1] = 0.0; // green
+                color[0] = 0.0; // blue
             } 
             else // no event
             {
