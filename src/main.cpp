@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
                             "{rel-rate              | 1.0                   | pyDVS emulator relax rate         }"
                             "{adapt-up              | 1.0                   | pyDVS emulator adapt up           }"
                             "{adapt-down            | 1.0                   | pyDVS emulator adapt down         }"
-                            "{save-proc-vid         | true                  | save processed frames             }"
+                            "{save-proc-vid         |                       | save processed frames             }"
                             "{proc-vid-save-loc     | ../processed_frames/  | location to save processed frames }"
                             "{proc-vid-name         | events.avi            | name of event frames video        }" };
 
@@ -300,11 +300,15 @@ int main(int argc, char *argv[])
         std::vector<int> params;
         params.push_back(cv::VIDEOWRITER_PROP_HW_ACCELERATION);
         params.push_back(cv::VIDEO_ACCELERATION_ANY);
-        eventFrameVideo.open(   procVidSaveLoc + procVidName,
-                                cv::VideoWriter::fourcc('M','J','P','G'),
+        params.push_back(cv::VIDEOWRITER_PROP_IS_COLOR);
+        params.push_back(1);
+        params.push_back(cv::VIDEOWRITER_PROP_DEPTH);
+        params.push_back(CV_32FC3);
+        eventFrameVideo.open(   /*procVidSaveLoc +*/ procVidName,
+                                cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
                                 DVS.getFPS(),
                                 cv::Size(DVS.getWidth(), DVS.getHeight()),
-                                true);
+                                params);
 
         if (!eventFrameVideo.isOpened())
         {
@@ -353,7 +357,10 @@ int main(int argc, char *argv[])
         // Saving event frames
         if (saveProcVid)
         {
-            eventFrameVideo.write(DVS.getEvents());
+            cv::Mat eventFrame;
+            //DVS.getEvents().convertTo(eventFrame, CV_8U);
+            DVS.getEvents().copyTo(eventFrame);
+            eventFrameVideo.write(eventFrame);
         }
 
         // Check if stream has ended
@@ -368,6 +375,9 @@ int main(int argc, char *argv[])
 
     // Release VideoWriter
     eventFrameVideo.release();
+
+    // Destroy all windows
+    cv::destroyAllWindows();
 
     return NO_ERROR;
 }
