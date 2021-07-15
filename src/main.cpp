@@ -26,20 +26,23 @@ int main(int argc, char *argv[])
     };
 
     // CLI argument parser keys
-    const std::string keys{ "{h help usage ?        |                   | show help message                 }"
-                            "{vid-name              | /dev/video0       | link of video stream              }"
-                            "{show-all-frame        |                   | show all frame                    }"
-                            "{show-raw-frame        |                   | show raw frame                    }"
-                            "{show-ref-frame        |                   | show ref frame                    }"
-                            "{show-gray-frame       |                   | show grayscale frame              }"
-                            "{show-event-frame      |                   | show event frame                  }"
-                            "{show-diff-frame       |                   | show difference frame             }"
-                            "{write-fps             |                   | show fps count on raw frame       }"
-                            "{write-fps-freq        | 1000              | how fast to print fps count in ms }"
-                            "{thr                   | 50.0              | pyDVS emulator threshold          }"
-                            "{rel-rate              | 1.0               | pyDVS emulator relax rate         }"
-                            "{adapt-up              | 1.0               | pyDVS emulator adapt up           }"
-                            "{adapt-down            | 1.0               | pyDVS emulator adapt down         }" };
+    const std::string keys{ "{h help usage ?        |                       | show help message                 }"
+                            "{vid-name              | /dev/video0           | link of video stream              }"
+                            "{show-all-frame        |                       | show all frame                    }"
+                            "{show-raw-frame        |                       | show raw frame                    }"
+                            "{show-ref-frame        |                       | show ref frame                    }"
+                            "{show-gray-frame       |                       | show grayscale frame              }"
+                            "{show-event-frame      |                       | show event frame                  }"
+                            "{show-diff-frame       |                       | show difference frame             }"
+                            "{write-fps             |                       | show fps count on raw frame       }"
+                            "{write-fps-freq        | 1000                  | how fast to print fps count in ms }"
+                            "{thr                   | 50.0                  | pyDVS emulator threshold          }"
+                            "{rel-rate              | 1.0                   | pyDVS emulator relax rate         }"
+                            "{adapt-up              | 1.0                   | pyDVS emulator adapt up           }"
+                            "{adapt-down            | 1.0                   | pyDVS emulator adapt down         }"
+                            "{save-proc-vid         | true                  | save processed frames             }"
+                            "{proc-vid-save-loc     | ../processed_frames/  | location to save processed frames }"
+                            "{proc-vid-name         | events.avi            | name of event frames video        }" };
 
     cv::CommandLineParser args(argc, argv, keys);
 
@@ -173,6 +176,33 @@ int main(int argc, char *argv[])
             std::cout << "To set adapt down value for pyDVS processing.\n\n";
         }
 
+        // Details for flag for saving processed videos
+        else if (   args.get<std::string>("h")     == "save-proc-vid"   ||
+                    args.get<std::string>("?")     == "save-proc-vid"   ||
+                    args.get<std::string>("help")  == "save-proc-vid"   ||
+                    args.get<std::string>("usage") == "save-proc-vid"   )
+        {
+            std::cout << "To toggle saving processed video.\n\n";
+        }
+
+        // Details for processed videos save location
+        else if (   args.get<std::string>("h")     == "proc-vid-save-loc"   ||
+                    args.get<std::string>("?")     == "proc-vid-save-loc"   ||
+                    args.get<std::string>("help")  == "proc-vid-save-loc"   ||
+                    args.get<std::string>("usage") == "proc-vid-save-loc"   )
+        {
+            std::cout << "Processed video save location.\n\n";
+        }
+
+        // Details for name of processed videos
+        else if (   args.get<std::string>("h")     == "proc-vid-name"   ||
+                    args.get<std::string>("?")     == "proc-vid-name"   ||
+                    args.get<std::string>("help")  == "proc-vid-name"   ||
+                    args.get<std::string>("usage") == "proc-vid-name"   )
+        {
+            std::cout << "Processed video name.\n\n";
+        }
+
         // Showing general usage instructions
         args.printMessage();
 
@@ -180,19 +210,22 @@ int main(int argc, char *argv[])
     }
 
     // Capturing CLI arguments value
-    const std::string vidName       { args.get<std::string>("vid-name") }; // video stream link
-    const bool showAllFrame         { args.has("show-all-frame") }; // show all frame
-    bool showRawFrame               { args.has("show-raw-frame") }; // show raw frame or not
-    bool showRefFrame               { args.has("show-ref-frame") }; // show raw frame or not
-    bool showGrayFrame              { args.has("show-gray-frame") }; // show grayscale frame or not
-    bool showDiffFrame              { args.has("show-diff-frame") }; // show difference frame or not
-    bool showEventFrame             { args.has("show-event-frame") }; // show event frame or not
-    const bool showFPSCount         { args.has("write-fps") }; // show fps count
-    const size_t showFPSCountPeriod { args.get<size_t>("write-fps-freq") }; // show fps count frequency
-    const float thr                 { args.get<float>("thr") }; // threshold value for pyDVS processing
-    const float relRate             { args.get<float>("rel-rate") }; // relax rate value for pyDVS processing
-    const float adaptUp             { args.get<float>("adapt-up") }; // adapt up value for pyDVS processing
-    const float adaptDown           { args.get<float>("adapt-down") }; // adapt down value for pyDVS processing
+    const std::string vidName           { args.get<std::string>("vid-name") }; // video stream link
+    const bool showAllFrame             { args.has("show-all-frame") }; // show all frame
+    bool showRawFrame                   { args.has("show-raw-frame") }; // show raw frame or not
+    bool showRefFrame                   { args.has("show-ref-frame") }; // show raw frame or not
+    bool showGrayFrame                  { args.has("show-gray-frame") }; // show grayscale frame or not
+    bool showDiffFrame                  { args.has("show-diff-frame") }; // show difference frame or not
+    bool showEventFrame                 { args.has("show-event-frame") }; // show event frame or not
+    const bool showFPSCount             { args.has("write-fps") }; // show fps count
+    const size_t showFPSCountPeriod     { args.get<size_t>("write-fps-freq") }; // show fps count frequency
+    const float thr                     { args.get<float>("thr") }; // threshold value for pyDVS processing
+    const float relRate                 { args.get<float>("rel-rate") }; // relax rate value for pyDVS processing
+    const float adaptUp                 { args.get<float>("adapt-up") }; // adapt up value for pyDVS processing
+    const float adaptDown               { args.get<float>("adapt-down") }; // adapt down value for pyDVS processing
+    const bool saveProcVid              { args.has("save-proc-vid") }; // save processed video
+    const std::string procVidSaveLoc    { args.get<std::string>("proc-vid-save-loc") }; // processed video save location
+    const std::string procVidName       { args.get<std::string>("proc-vid-name") }; // processed video name
 
     if (showAllFrame)
     {
@@ -256,6 +289,30 @@ int main(int argc, char *argv[])
                 << "Adapt up = " << DVS.getAdaptUp() << '\n'
                 << "Adapt down = " << DVS.getAdaptDown() << '\n';
 
+    // VideoWriter object
+    cv::VideoWriter eventFrameVideo;
+
+    if (saveProcVid)
+    {
+        std::cout << "Setting up VideoWriter for saving event frame video\n";
+
+        // Set VideoWriter parameters
+        std::vector<int> params;
+        params.push_back(cv::VIDEOWRITER_PROP_HW_ACCELERATION);
+        params.push_back(cv::VIDEO_ACCELERATION_ANY);
+        eventFrameVideo.open(   procVidSaveLoc + procVidName,
+                                cv::VideoWriter::fourcc('M','J','P','G'),
+                                DVS.getFPS(),
+                                cv::Size(DVS.getWidth(), DVS.getHeight()),
+                                true);
+
+        if (!eventFrameVideo.isOpened())
+        {
+            std::cerr << "Could not open output video for writing.\n";
+            return UNREADABLE_VIDEO;
+        }
+    }
+
     // Show frames
     for(; ok; ok = DVS.update())
     {
@@ -293,6 +350,12 @@ int main(int argc, char *argv[])
             cv::imshow(eventStreamWinName, DVS.getEvents());
         }
 
+        // Saving event frames
+        if (saveProcVid)
+        {
+            eventFrameVideo.write(DVS.getEvents());
+        }
+
         // Check if stream has ended
         char c {(static_cast<char>(cv::pollKey()))};
         if(c==27 || c == 'q' || c == 'Q')
@@ -302,6 +365,9 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
+    // Release VideoWriter
+    eventFrameVideo.release();
 
     return NO_ERROR;
 }
